@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html>
+<html ng-app="memoryApp">
+<head>
+  <meta charset="UTF-8">
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-route.js"></script>
+    <link href="style.css" rel="stylesheet" />
+<script>
+    angular.module("memoryApp", ["ngRoute"])
+    .controller("playfieldController", function($scope, $location, $timeout, $interval){
+        $scope.tryb = $location.path();
+        
+            var imgTab = [
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg",
+                "img/0.jpg"
+            ];
+
+            var clickedImgTab = [
+                "img/1.jpg",
+                "img/1.jpg",
+                "img/2.jpg",
+                "img/2.jpg",
+                "img/3.jpg",
+                "img/3.jpg",
+                "img/4.jpg",
+                "img/4.jpg",
+                "img/5.jpg",
+                "img/5.jpg",
+                "img/6.jpg",
+                "img/6.jpg",
+                "img/7.jpg",
+                "img/7.jpg",
+                "img/8.jpg",
+                "img/8.jpg"
+            ];
+            for (var i = 0; i < imgTab.length - 1; i++) {
+                var tmpImg = clickedImgTab[i];
+                var whichImg = Math.floor(Math.random() * (i + 1));
+                clickedImgTab[i] = clickedImgTab[whichImg];
+                clickedImgTab[whichImg] = tmpImg;
+            }
+            console.log(clickedImgTab);
+            $scope.imgTab = imgTab;
+            $scope.clickedImgTab = clickedImgTab;
+
+
+            var hideClicked = false;
+            var tmpClicked;
+            var countWin = 0;
+            var moveEnded = true;
+            var firstClick = true;
+            var tryb = $scope.tryb[6] * 10;
+
+            $scope.onClick = function (clicked) {
+                if (firstClick == true) {
+                    firstClick = false;
+                    var timebar = document.getElementById("timebar");
+                    var p = 100;
+                    var d1 = new Date();
+                    var difference;
+                    $interval(function () {
+                        var d2 = new Date();
+                        difference = d2 - d1;
+                        p = p - 0.001*tryb;
+                        timebar.style.width = p + "%";
+                        $scope.timeleft = formatTime(1000*tryb - difference);
+                        if (p <= 20) {
+                            timebar.style.backgroundColor = "deeppink";
+                            if (p <= 0.01) {
+                                alert("SKOŃCZYŁ SIĘ CZAS - PRZEGRAŁEŚ!");
+                            }
+                        }
+                    },tryb/10, (100000/tryb)-1)
+                }
+                if (moveEnded == true) {
+                    var clickedImg = document.getElementById(clicked);
+                    
+                    clickedImg.children[0].classList.add("hidden");
+                    clickedImg.children[1].classList.remove("hidden");
+
+                    if (hideClicked == false) {
+                        tmpClicked = clickedImg;
+                    }
+                    else if (hideClicked == true) {
+                        console.log(clickedImg.children[1]);
+                        console.log(tmpClicked.children[1]);
+                        if (clickedImg.children[1].src == tmpClicked.children[1].src) {
+                            countWin++;
+                            console.log(countWin);
+                            if (countWin == 8) {
+                                alert("WYGRAŁEŚ!");
+                            }
+                        }
+                        else {
+                            moveEnded = false;
+                            $timeout(function () {
+                                clickedImg.children[1].classList.add("hidden");
+                                clickedImg.children[0].classList.remove("hidden");
+                                tmpClicked.children[1].classList.add("hidden");
+                                tmpClicked.children[0].classList.remove("hidden");
+                                moveEnded = true;
+                            }, 1500);
+                        }
+                    }
+
+                    hideClicked = !hideClicked;
+                }
+            }
+
+            function formatTime(p) {
+                var ms, s, m;
+                ms = p % 1000;
+                s = Math.floor((p / 1000) % 60);
+                m = Math.floor((p / 1000) / 60);
+                if (ms.toString().length == 2) {
+                    ms = "0" + ms.toString();
+                }
+
+                if (ms.toString().length == 1) {
+                    ms = "00" + ms.toString();
+                }
+
+                if (s.toString().length == 1) {
+                    s = "0" + s.toString();
+                }
+
+                if (m.toString().length == 1) {
+                    m = "0" + m.toString();
+                }
+
+                return m + ":" + s + ":" + ms;
+            }
+    })
+    .directive('gameField', function() {
+          return {
+              template: '<div ng-repeat="x in imgTab track by $index" class="karta" ng-click="onClick($index)" id="{{$index}}"><img src={{x}}/><img src={{clickedImgTab[$index]}} class="hidden"/></div>'
+          }
+    })
+    .directive('timerDirective', function () {
+        return {
+            templateUrl: "timer.html",
+        }
+    })
+    .directive('timeBar', function () {
+        return {
+            template: '<div id="timer">{{timeleft}}<div id="timebar"></div></div>'
+        }
+    })
+    .config(function($routeProvider, $locationProvider){
+        $locationProvider.hashPrefix("~");
+        $routeProvider
+        .when("/", {
+            templateUrl: 'main.html'
+        })
+        .when("/tryb/30", {
+            templateUrl: 'playfield.html',
+            controller: 'playfieldController'
+              })
+        .when("/tryb/60", {
+            templateUrl: 'playfield.html',
+            controller: 'playfieldController'
+              })
+        .when("/tryb/90", {
+            templateUrl: 'playfield.html',
+            controller: 'playfieldController'
+              })
+        .otherwise({
+            redirectTo:"/"
+        })
+    });
+</script>
+</head>
+    
+<body ng-controller="playfieldController">
+    <div ng-view id="main"></div>
+</body>
+</html>
